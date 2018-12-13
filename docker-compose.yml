@@ -361,3 +361,47 @@ registry:
     REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
     REGISTRY_HTTP_TLS_CERTIFICATE: /certs/registry/fullchain.pem
     REGISTRY_HTTP_TLS_KEY: /certs/registry/privkey.pem
+
+gitlab:
+  container_name: gitlab
+  restart: always
+  image: accenture/adop-gitlab:latest
+  expose:
+    - "80"
+    - "22"
+  environment:
+    INITIAL_ADMIN_USER: ${INITIAL_ADMIN_USER}
+    INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD}
+    JENKINS_USER: ${JENKINS_USER}
+    JENKINS_PASSWORD: ${JENKINS_PASSWORD}
+    GITLAB_OMNIBUS_CONFIG: |
+     external_url "http://ec2-18-191-189-23.us-east-2.compute.amazonaws.com/gitlab"
+     postgresql['enable'] = false
+     gitlab_rails['db_username'] = "gitlab"
+     gitlab_rails['db_password'] = "gitlab"
+     gitlab_rails['db_host'] = "gitlab-postgresql"
+     gitlab_rails['db_port'] = "5432"
+     gitlab_rails['db_database'] = "gitlabhq-production"
+     gitlab_rails['db_adapter'] = 'postgresql'
+     gitlab_rails['db_encoding'] = 'utf8'
+     # Redis Configuration
+     redis['enable'] = false
+     gitlab_rails['redis_host'] = 'gitlab-redis'
+     gitlab_rails['redis_port'] = '6379'
+     # LDAP Configuration
+     gitlab_rails['ldap_enabled'] = true
+     gitlab_rails['ldap_servers'] = YAML.load <<-'EOS'
+       main:
+         label: 'LDAP'
+         host: 'ldap'
+         port: 389
+         uid: 'uid'
+         method: 'plain'
+         bind_dn: "${LDAP_MANAGER_DN}"
+         password: "${LDAP_PWD}"
+         active_directory: true
+         allow_username_or_email_login: false
+         block_auto_created_users: false
+         base: "${LDAP_FULL_DOMAIN}"
+         signin_enabled: false
+     EOS
